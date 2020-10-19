@@ -1,0 +1,98 @@
+<html>
+
+  <head>
+    <title>Octahedron</title>
+    <style>
+body {
+  font-family: Monospace;
+  background-color: #f0f0f0;
+  margin: 0px;
+  overflow: hidden;
+}
+
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+    </style>
+    <script src="libs/three.js"></script>
+    <script src="libs/stats.min.js"></script>
+  </head>
+
+  <body>
+
+    <script>
+      var scene, renderer, camera, stats;
+      var pivot;
+      var geometry;
+
+      function Start() {
+
+              scene = new THREE.Scene();
+              camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+              pivot = new THREE.Object3D();
+              scene.add(pivot);
+
+              renderer = new THREE.WebGLRenderer();
+              renderer.setSize(window.innerWidth, window.innerHeight);
+              renderer.setClearColor(0xf0f0f0);
+              document.body.appendChild(renderer.domElement);
+
+              camera.position.z = 5;
+              camera.position.y = -2;
+
+              geometry = new THREE.Geometry();
+
+              var base_ang = 90 * Math.PI / 180;
+              var ang = 120 * Math.PI / 180;
+
+              geometry.vertices.push(
+                      new THREE.Vector3(Math.cos(base_ang)  , 0, Math.sin(base_ang)),
+                      new THREE.Vector3(Math.cos(2*base_ang), 0, Math.sin(2*base_ang)),
+                      new THREE.Vector3(Math.cos(3*base_ang), 0, Math.sin(3*base_ang)),
+                      new THREE.Vector3(Math.cos(4*base_ang), 0, Math.sin(4*base_ang)),
+
+                      new THREE.Vector3(0, Math.sin(base_ang), 0),
+                      new THREE.Vector3(0, -Math.sin(base_ang), 0),
+                    );
+
+              geometry.faces.unshift(new THREE.Face3(0,1,4));
+              geometry.faces.unshift(new THREE.Face3(1,2,4));
+              geometry.faces.unshift(new THREE.Face3(2,3,4));
+              geometry.faces.unshift(new THREE.Face3(0,3,4));
+
+              geometry.faces.unshift(new THREE.Face3(0,1,5));
+              geometry.faces.unshift(new THREE.Face3(1,2,5));
+              geometry.faces.unshift(new THREE.Face3(2,3,5));
+              geometry.faces.unshift(new THREE.Face3(0,3,5));
+
+
+              var material = new THREE.MeshBasicMaterial({
+                      color: 0x880088,
+                      wireframe: true,
+                      //side: THREE.DoubleSide
+                      //side: THREE.FrontFace
+                    });
+
+              octahedron = new THREE.Mesh(geometry, material);
+              pivot.add(octahedron);
+
+            }
+
+
+      function Update() {
+              pivot.rotation.x += 1 * Math.PI / 180;
+              pivot.rotation.y += 1 * Math.PI / 180;
+              pivot.rotation.z += 1 * Math.PI / 180;
+
+              requestAnimationFrame(Update);
+              renderer.render(scene, camera);
+            }
+
+      Start();
+      Update();
+    </script>
+  </body>
+
+</html>
