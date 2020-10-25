@@ -27,28 +27,30 @@
 			renderer.setClearColor(0xf0f0f0);
 			document.body.appendChild(renderer.domElement);
 
+			// Pivot flower creation
 			var flower = new THREE.Object3D();
 			scene.add(flower);
-
 			
+			// Stem creation
 			var material, geometry, mesh;
-			var stemHeight = 15;
+			var stemHeight = 20;
 			geometry = new THREE.CylinderGeometry(2, 2, stemHeight, 32);
 			material = new THREE.MeshBasicMaterial( {color: 0x6FD08C} );
 			var stem = new THREE.Mesh(geometry, material);
-			flower.add(stem);
+			flower.add(stem); // Add to flower
 
 			stem.position.y = stemHeight/2;
 
-			//var material, geometry, mesh;
+			// Stamen mesh creation
 			var stamenRadius = 3;
 			geometry = new THREE.SphereGeometry(stamenRadius, 32, 32);
 			material = new THREE.MeshBasicMaterial( {color: 0x333333} );
 			var stamen = new THREE.Mesh(geometry, material);
-			stem.add(stamen);
+			stem.add(stamen); // Add to stem
 
 			stamen.position.y = stemHeight/2;
-			
+
+			// Petal mesh creation
 			var petalHeight = 15;
 			geometry = new THREE.CylinderGeometry(0, 2.5, petalHeight, 32);
 			material = new THREE.MeshBasicMaterial( {color: 0xED6A5A} );
@@ -56,22 +58,24 @@
 			petalMesh.position.x = petalHeight/2;
 			petalMesh.rotation.z = 90 * Math.PI/180;
 
+			// Pivot petal creation
 			var petal = new THREE.Object3D();
 			petal.add(petalMesh);
 
-			var n = 20;
+			var n = 18;
 			for (let i = 0; i < n; i++) {
-				petal.rotation.y += 365/n * Math.PI/180;
+				petal.rotation.y += 360/n * Math.PI/180;
 				stamen.add(petal.clone());
 			}
 
-			camera.position.z = 35;
+			flower.rotation.x = 25 * Math.PI/180;
+			camera.position.z = 50;
 			camera.position.y = 10;
 			
 			function render() {
 				requestAnimationFrame(render);
-				flower.rotation.z += 1.2 * Math.PI/180;
-				flower.rotation.x += 1.2 * Math.PI/180;
+				// flower.rotation.z += 1.2 * Math.PI/180;
+				// flower.rotation.x += 1.2 * Math.PI/180;
 				
 				renderer.render(scene, camera);
 			}

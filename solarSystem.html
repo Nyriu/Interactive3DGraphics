@@ -1,0 +1,134 @@
+<html>
+	<head>
+		<title>Solar System</title>
+		<style>
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+		
+		canvas { 
+			width: 100%; 
+			height: 100%;
+		}
+		</style>
+		<script src="libs/three.js"></script>
+	</head>
+	<body>
+		
+		<script>
+			var scene = new THREE.Scene();
+			var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setClearColor(0xf0f0f0);
+			document.body.appendChild(renderer.domElement);
+
+			var solarSystem = new THREE.Object3D();
+			scene.add(solarSystem);
+			
+			var material, geometry, mesh;
+      // SOLE //
+			var sunRadius = 6;
+			geometry = new THREE.SphereGeometry(sunRadius, 20, 20);
+			material = new THREE.MeshBasicMaterial( {color: 0xFA9500, wireframe: true} );
+			var sun = new THREE.Mesh(geometry, material);
+			solarSystem.add(sun);
+
+      // PIANETA //
+      var planetPivot = new THREE.Object3D();
+			solarSystem.add(planetPivot);
+
+      var planetCenterPivot = new THREE.Object3D();
+			planetPivot.add(planetCenterPivot);
+      var orbitRadius = 30;
+      planetCenterPivot.position.x = orbitRadius;
+
+      var axisPivot = new THREE.Object3D();
+			planetCenterPivot.add(axisPivot);
+
+      var axisHeight = 20;
+			geometry = new THREE.CylinderGeometry(.5, .5, axisHeight, 32);
+			material = new THREE.MeshBasicMaterial( {color: 0x6FD08C} );
+			var axis = new THREE.Mesh(geometry, material);
+			axisPivot.add(axis);
+      axisPivot.rotation.z = 25 * Math.PI/180;
+
+      var planetRadius = 3;
+			geometry = new THREE.SphereGeometry(planetRadius, 16, 16);
+			material = new THREE.MeshBasicMaterial( {color: 0xBABD8D, wireframe: true} );
+			var planet = new THREE.Mesh(geometry, material);
+			axisPivot.add(planet);
+
+      // LUNA //
+      var moonPivot = new THREE.Object3D();
+			planetCenterPivot.add(moonPivot);
+
+      var moonRadius = 2;
+			geometry = new THREE.SphereGeometry(moonRadius, 16, 16);
+			material = new THREE.MeshBasicMaterial( {color: 0x9AADBF, wireframe: true} );
+			var moon = new THREE.Mesh(geometry, material);
+			moonPivot.add(moon);
+      moon.position.x = 10;
+
+      camera.position.z = 70;
+
+      var geonosis = createPlanet(solarSystem, 15, 1, -25, 4, 2.5, 0x210203);
+      var tatooine = createPlanet(geonosis.planetCenterPivot, 15, 1.5, 0, 2, 2.5, 0xD3B99F);
+
+      function createPlanet (orbitCenter, orbitRadius, revolutionAngle, axisAngle, planetRadius, rotationAngle, color) {
+        var planetPivot = new THREE.Object3D();
+        orbitCenter.add(planetPivot);
+
+        var planetCenterPivot = new THREE.Object3D();
+        planetPivot.add(planetCenterPivot);
+        planetCenterPivot.position.x = orbitRadius;
+
+        var axisPivot = new THREE.Object3D();
+        planetCenterPivot.add(axisPivot);
+
+        // var axisHeight = 20;
+        // geometry = new THREE.CylinderGeometry(.5, .5, axisHeight, 32);
+        // material = new THREE.MeshBasicMaterial( {color: 0x6FD08C} );
+        // var axis = new THREE.Mesh(geometry, material);
+        // axisPivot.add(axis);
+        axisPivot.rotation.z = axisAngle * Math.PI/180;
+
+        geometry = new THREE.SphereGeometry(planetRadius, 16, 16);
+        material = new THREE.MeshBasicMaterial( {color: color, wireframe: true} );
+        var planet = new THREE.Mesh(geometry, material);
+        axisPivot.add(planet);
+
+        revolutionAngle = revolutionAngle * Math.PI/180;
+        rotationAngle = rotationAngle * Math.PI/180;
+
+        return {
+          planetCenterPivot,
+          planetPivot,
+          revolutionAngle,
+          planet,
+          rotationAngle
+        }
+      }
+
+			function render() {
+				requestAnimationFrame(render);
+				// planetPivot.rotation.y += 1.2 * Math.PI/180;
+				// planet.rotation.y += 2 * Math.PI/180;
+				// moonPivot.rotation.y += 2 * Math.PI/180;
+
+        geonosis.planetPivot.rotation.y += geonosis.revolutionAngle;
+				geonosis.planet.rotation.y += geonosis.rotationAngle;
+        tatooine.planetPivot.rotation.y += tatooine.revolutionAngle;
+				tatooine.planet.rotation.y += tatooine.rotationAngle;
+				
+				renderer.render(scene, camera);
+			}
+			
+			render();
+		</script>
+	</body>
+</html>
