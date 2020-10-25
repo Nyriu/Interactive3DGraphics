@@ -1,0 +1,128 @@
+<html>
+	<head>
+		<title>Solar System</title>
+		<style>
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+		
+		canvas { 
+			width: 100%; 
+			height: 100%;
+		}
+		</style>
+		<script src="libs/three.js"></script>
+	</head>
+	<body>
+
+		<script>
+			var scene = new THREE.Scene();
+			var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+			var renderer = new THREE.WebGLRenderer();
+			renderer.setSize(window.innerWidth, window.innerHeight);
+			renderer.setClearColor(0xf0f0f0);
+			document.body.appendChild(renderer.domElement);
+
+			var solarSystem = new THREE.Object3D();
+			scene.add(solarSystem);
+			
+      camera.position.z = 80;
+
+      var planets = [];
+
+      var planetsNumMin = 2;
+      var planetsNumMax = 2;
+      var moonProb = .35;
+      var moonsNumMin = 1;
+      var moonsNumMax = 3;
+      var orbitRadiusMin = 15;
+      var orbitRadiusMax = 100;
+
+      var sun = createPlanet(solarSystem, 0, 0, 0, 6, 0, 0xFA9500);
+      planets.push(sun);
+      var planetsNum = Math.floor(Math.random() * (planetsNumMax - planetsNumMin +1)) + planetsNumMin;
+
+      for (let i = 0; i < planetsNum; i++) {
+        var orbitRadius = Math.floor(Math.random() * (orbitRadiusMax - orbitRadiusMin +1)) + orbitRadiusMin;
+        var p = createPlanet(solarSystem, orbitRadius, 1, 0, 4, .25*1460, Math.floor(Math.random()*16777215));
+        planets.push(p);
+        if (Math.random() > moonProb) {
+          var numMoon = Math.floor(Math.random() * (moonsNumMax - moonsNumMin +1)) + moonsNumMin;
+          for (let j=0; j < numMoon; j++) {
+            var moon = createPlanet(p.planetCenterPivot, orbitRadius, .01*1460, 0, 2, .25*1460, Math.floor(Math.random()*16777215));
+          planets.push(moon);
+          }
+          
+        }
+      }
+
+      //var geometry = new THREE.SphereGeometry(.5, 16, 16);
+      //var material = new THREE.MeshBasicMaterial( {color: 0xff0000} );
+      //var point = new THREE.Mesh(geometry, material);
+      //moon.planet.add(point);
+      //point.position.x = moon.planetRadius;
+
+
+      function createPlanet (orbitCenter, orbitRadius, revolutionAngle, axisAngle, planetRadius, rotationAngle, color, showRotationAxis = false) {
+        var planetPivot = new THREE.Object3D();
+        orbitCenter.add(planetPivot);
+
+        var planetCenterPivot = new THREE.Object3D();
+        planetPivot.add(planetCenterPivot);
+        planetCenterPivot.position.x = orbitRadius;
+
+        var axisPivot = new THREE.Object3D();
+        planetCenterPivot.add(axisPivot);
+
+
+        var axisHeight = 20;
+        var geometry = new THREE.CylinderGeometry(.5, .5, axisHeight, 32);
+        var material = new THREE.MeshBasicMaterial( {color: 0x6FD08C} );
+        var axis = new THREE.Mesh(geometry, material);
+        axisPivot.add(axis);
+        axis.visible = showRotationAxis;
+        axisPivot.rotation.z = axisAngle * Math.PI/180;
+
+        geometry = new THREE.SphereGeometry(planetRadius, 16, 16);
+        material = new THREE.MeshBasicMaterial( {color: color, wireframe: true} );
+        var planet = new THREE.Mesh(geometry, material);
+        axisPivot.add(planet);
+
+        revolutionAngle = revolutionAngle * Math.PI/180;
+        rotationAngle = rotationAngle * Math.PI/180;
+
+        return {
+          planetCenterPivot,
+          planetPivot,
+          planetRadius,
+          revolutionAngle,
+          planet,
+          rotationAngle
+        }
+      }
+
+      var t0 = Date.now();
+      var t1 = 0;
+			function render() {
+        t1 = Date.now();
+				requestAnimationFrame(render);
+
+        if (t1 - t0 > 1000) {
+          planets.forEach(p => { 
+            p.planetPivot.rotation.y += p.revolutionAngle
+            p.planet.rotation.y += p.rotationAngle
+          })
+          t0 = t1;
+        }
+				
+				renderer.render(scene, camera);
+			}
+			
+			render();
+		</script>
+	</body>
+</html>
