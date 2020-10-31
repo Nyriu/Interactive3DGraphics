@@ -1,0 +1,138 @@
+<html>
+	<head>
+		<title>My colored vertices displacement with shaders!</title>
+		<style>
+		
+		body {
+			font-family: Monospace;
+			background-color: #f0f0f0;
+			margin: 0px;
+			overflow: hidden;
+		}
+		
+		canvas { 
+			width: 100%; 
+			height: 100%;
+		}
+	
+	</style>
+		<script src="libs/three.js"></script>
+		<script src="libs/stats.min.js"></script>
+		<script src="libs/OrbitControls.js"></script>
+	</head>
+	<body>
+	
+		<script type="text/x-glsl" id="vertex">
+			attribute float displacement;
+      uniform float amplitude; 
+			varying vec3 vNormal;
+			
+      void main() {
+        vec3 newPosition = position + normal * amplitude * displacement;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( newPosition, 1.0 );
+        vNormal = normal;
+      }
+		</script>
+		
+		<script type="text/x-glsl" id="fragment">
+			varying vec3 vNormal;
+			void main() {
+        vec3 color = vNormal * normalize(vec3(50, 50, 50));
+				gl_FragColor = vec4(color, 1.0);
+			}
+		</script>
+	
+		
+		<script>
+			var scene = new THREE.Scene();
+			var camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
+			camera.position.set( 0, 0, 100 );
+			
+			var renderer = new THREE.WebGLRenderer({ antialias: true });
+			renderer.setSize( window.innerWidth, window.innerHeight );
+			renderer.setClearColor( 0xf0f0f0 );
+			document.body.appendChild( renderer.domElement );
+			
+			// scene code here
+					
+			var vs = document.getElementById("vertex").textContent;
+			var fs = document.getElementById("fragment").textContent;
+
+			var uniforms = {
+						amplitude: { value: 1 }
+					};
+			
+			var sphereMaterial = new THREE.ShaderMaterial({uniforms: uniforms, vertexShader: vs, fragmentShader: fs });
+			
+			sphere = new THREE.Mesh(
+				new THREE.SphereBufferGeometry( 10, 32, 16 ),
+				sphereMaterial );
+				
+			displacement = new Float32Array( sphere.geometry.getAttribute("position").count );
+			
+			for(var i = 0; i < displacement.length; i++) {
+			   displacement[i]=Math.random() * 30;
+		    }
+			
+			sphere.geometry.setAttribute( 'displacement', new THREE.BufferAttribute( displacement, 1 ) );
+				
+			scene.add( sphere );
+
+			controls = new THREE.OrbitControls( camera );
+			
+
+      function genDisplacement(){
+        for(var i = 0; i < displacement.length; i++) {
+           displacement[i]=Math.random() * 30;
+          }
+      }
+      
+			
+      var t0 = Date.now();
+      var t1 = 0;
+
+      var val = 0;
+      var valIncr = 0.005;
+      var dispScale = 7;
+
+			function render() {
+        t1 = Date.now();
+        //if (t1 - t0 > 1000) {
+        //  genDisplacement();
+			  //  sphere.geometry.setAttribute(
+        //          'displacement',
+        //          new THREE.BufferAttribute( displacement, 1 ) );
+
+        //  uniforms.amplitude.value = Math.random();
+
+        //  t0 = t1;
+        //}
+
+        uniforms.amplitude.value = Math.sin(val);
+        val += valIncr;
+
+        //console.log(Math.sin(val));
+
+        if (Math.sin(val) <= 0) {
+          val = 0;
+          for(var i = 0; i < displacement.length; i++) {
+            if (Math.random() < 0.5){
+              displacement[i] += Math.random() * dispScale;
+            } else {
+              displacement[i] -= Math.random() * dispScale;
+            }
+          }
+          sphere.geometry.setAttribute(
+                  'displacement',
+                  new THREE.BufferAttribute( displacement, 1 ) );
+        }
+
+			  controls.update();
+				requestAnimationFrame( render );
+				renderer.render(scene, camera);
+			}
+			
+			render();
+		</script>
+	</body>
+</html>
