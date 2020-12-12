@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<title>three.js webgl - lights - spotlight</title>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+		<style>
+			body {
+				background-color: #f0f0f0;
+				margin: 0px;
+				overflow: hidden;
+			}
+
+			#info {
+				position: absolute;
+				top: 0px; width: 100%;
+				color: #222;
+				padding: 5px;
+				font-family: Monospace;
+				font-size: 13px;
+				text-align: center;
+			}
+
+			a {
+				color: #000;
+				text-decoration: none;
+			}
+
+			a:hover {
+				color: #0080ff;
+			}
+		</style>
+	</head>
+	<body>
+
+		<div id="info">
+			<a href="https://github.com/robertoranon/int3D" target="_blank">Interactive 3D Graphics 2021 code</a> - lambertian shader by <a href="https://github.com/robertoranon" target="_blank">Roberto Ranon</a><br />
+		</div>
+		<script src="libs/three.js"></script>
+		<script src="libs/stats.min.js"></script>
+		<script src="libs/OrbitControls.js"></script>
+		<script src='libs/dat.gui.min.js'></script>
+
+		<!-- OLD shaders -->
+
+		<script type="text/x-glsl" id="vertex_old">
+		varying vec3 vNormal;
+		varying vec3 vPosition;
+
+		void main() {
+			vec4 vPos = modelViewMatrix * vec4( position, 1.0 );
+			vPosition = vPos.xyz;
+			vNormal = normalMatrix * normal;
+			gl_Position = projectionMatrix * vPos;
+		}
+		</script>
+
+		<script type="text/x-glsl" id="fragment_old">
+			varying vec3 vNormal;
+			varying vec3 vPosition;
+			uniform vec3 pointLightPosition; // in world space
+			uniform vec3 clight;
+			uniform vec3 cdiff;
+			const float PI = 3.14159;
+
+			void main() {
+				vec4 lPosition = viewMatrix * vec4( pointLightPosition, 1.0 );
+				vec3 l = normalize(lPosition.xyz - vPosition.xyz);
+				vec3 n = normalize( vNormal );  // interpolation destroys normalization, so we have to normalize
+				float nDotl = max(dot( n, l ),0.0);
+				// formula would be:
+				// outRadiance = clight * PI * cdiff/PI * nDotl, the two PI cancel out
+				vec3 outRadiance = clight * nDotl * cdiff;
+				// gamma encode the final value
+				gl_FragColor = vec4(pow( outRadiance, vec3(1.0/2.2)), 1.0);
+			}
+		</script>
+
+		<!-- NEW shaders -->
+		<script type="text/x-glsl" id="vertex">
+      uniform vec3 pointLightPosition; // in world space
+      uniform vec3 clight;
+      uniform vec3 cdiff;
+      const float PI = 3.14159;
+
+			varying vec3 vOutRadiance;
+
+      void main() {
+        vec4 vPos = modelViewMatrix * vec4( position, 1.0 );
+        gl_Position = projectionMatrix * vPos;
+
+				vec4 lPos = viewMatrix * vec4( pointLightPosition, 1.0 );
+				vec3 l = normalize(lPos.xyz - vPos.xyz);
+				vec3 n = normalize( normalMatrix * normal );
+				float nDotl = max(dot( n, l ),0.0);
+				// formula would be:
+				// outRadiance = clight * PI * cdiff/PI * nDotl, the two PI cancel out
+				vOutRadiance = clight * nDotl * cdiff;
+      }
+		</script>
+
+		<script type="text/x-glsl" id="fragment">
+			varying vec3 vOutRadiance;
+
+			void main() {
+				// gamma encode the final value
+				gl_FragColor = vec4(pow( vOutRadiance, vec3(1.0/2.2)), 1.0);
+			}
+		</script>
+
+
+
+		<!-- three.js code -->
+
+		<script>
+
+			var renderer = new THREE.WebGLRenderer( { antialias: true } );
+			var camera = new THREE.PerspectiveCamera( 35, window.innerWidth / window.innerHeight, 1, 1000 );
+			var controls = new THREE.OrbitControls( camera, renderer.domElement );
+			var scene = new THREE.Scene();
+
+			var lightParameters = {
+				red: 1.0,
+				green: 1.0,
+				blue: 1.0,
+				intensity: 1.5,
+			}
+			var cdiff = {
+				red: 0.7,
+				green: 0.0,
+				blue: 0.0,
+			}
+			var geomParameters = {
+        tubSegs: 200,
+        radSegs: 32,
+			}
+
+			var uniforms = {
+						cdiff:	{ type: "v3", value: new THREE.Vector3() },
+						pointLightPosition:	{ type: "v3", value: new THREE.Vector3() },
+						clight:	{ type: "v3", value: new THREE.Vector3() },
+					};
+
+			vs_old = document.getElementById("vertex_old").textContent;
+			fs_old = document.getElementById("fragment_old").textContent;
+			ourMaterial_old = new THREE.ShaderMaterial({ uniforms: uniforms, vertexShader: vs_old, fragmentShader: fs_old });
+
+			vs = document.getElementById("vertex").textContent;
+			fs = document.getElementById("fragment").textContent;
+			ourMaterial = new THREE.ShaderMaterial({ uniforms: uniforms, vertexShader: vs, fragmentShader: fs });
+
+      //geometry = new THREE.TorusKnotGeometry( 2, 0.5, geomParameters["tubSegs"], geomParameters["radSegs"]);
+      geometry = new THREE.TorusKnotBufferGeometry( 2, 0.5, geomParameters["tubSegs"], geomParameters["radSegs"]);
+
+
+       
+			//var mesh = new THREE.Mesh( geometry, ourMaterial_old );
+			var mesh = new THREE.Mesh( geometry, ourMaterial );
+
+			var lightMesh = new THREE.Mesh( new THREE.SphereGeometry( 1, 16, 16),
+				new THREE.MeshBasicMaterial ({color: 0xffff00, wireframe:true}));
+			lightMesh.position.set( 7.0, 7.0, 7.0 );
+			uniforms.pointLightPosition.value = new THREE.Vector3(lightMesh.position.x,
+			lightMesh.position.y,
+			lightMesh.position.z);
+
+			var gui;
+			var stats = new Stats();
+
+			function init() {
+
+				renderer.setClearColor( 0xf0f0f0 );
+
+				camera.position.set( 0, 10, 10 );
+				scene.add( camera );
+
+				scene.add( mesh );
+				scene.add(lightMesh);
+
+				document.body.appendChild( renderer.domElement );
+				renderer.setPixelRatio( window.devicePixelRatio );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+				controls.addEventListener( 'change', render );
+				controls.minDistance = 1;
+				controls.maxDistance = 100;
+				//controls.maxPolarAngle = Math.PI / 2;
+				controls.enablePan = false;
+				controls.target.copy( mesh.position );
+				controls.update();
+
+				window.addEventListener( 'resize', onResize, false );
+
+
+			  stats.domElement.style.position = 'absolute';
+			  stats.domElement.style.top = '0px';
+			  document.body.appendChild( stats.domElement );
+
+			}
+
+			function onResize() {
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				camera.aspect = ( window.innerWidth / window.innerHeight );
+				camera.updateProjectionMatrix();
+
+			}
+
+			function update() {
+				requestAnimationFrame( update );
+				stats.update();
+			}
+
+			function render() {
+				updateUniforms();
+				renderer.render( scene, camera );
+
+			}
+
+			function clearGui() {
+
+				if ( gui ) gui.destroy();
+				gui = new dat.GUI();
+				gui.open();
+
+			}
+
+			function buildGui() {
+
+				clearGui();
+				lightSettings = gui.addFolder('Light Parameters');
+				lightSettings.add(lightParameters,'red').min(0).max(1).onChange( function(newVal) { render() });
+				lightSettings.add(lightParameters,'green').min(0).max(1).onChange( function(newVal) { render() });
+				lightSettings.add(lightParameters,'blue').min(0).max(1).onChange( function(newVal) { render() });
+				lightSettings.add(lightParameters,'intensity').min(0).max(20).onChange( function(newVal) { render() });
+
+				cdiffSettings = gui.addFolder('cdiff');
+				cdiffSettings.add(cdiff,'red').min(0).max(1).onChange( function(newVal) { render() });
+				cdiffSettings.add(cdiff,'green').min(0).max(1).onChange( function(newVal) { render() });
+				cdiffSettings.add(cdiff,'blue').min(0).max(1).onChange( function(newVal) { render() });
+
+				geomSettings = gui.addFolder('Geometry');
+				geomSettings.add(geomParameters,'tubSegs').min(1).max(200).onChange( function(newVal) { geomParameters["tubSegs"] = newVal; updateGeom() });
+				geomSettings.add(geomParameters,'radSegs').min(1).max(32).onChange( function(newVal)  { geomParameters["radSegs"] = newVal; updateGeom() });
+
+				materialSettings = gui.addFolder('Material Shader');
+
+        materials = {
+          vertex: true,
+          fragment: false,
+        };
+
+        materialSettings.add(materials, "vertex" ).name('In Vertex Shader').listen().onChange(function(){setChecked("vertex")});
+        materialSettings.add(materials, "fragment").name('In Fragment Shader').listen().onChange(function(){setChecked("fragment")});
+
+        function setChecked( choosen ){
+          for (let mat in materials){
+            materials[mat] = false;
+          }
+          materials[choosen] = true;
+
+          if (materials["vertex"]) {
+            mesh.material = ourMaterial;
+          } else if (materials["fragment"]) {
+            mesh.material = ourMaterial_old;
+          } else {
+            mesh.material = ourMaterial;
+          }
+          render();
+        }
+
+        function updateGeom(){
+          generateGeometry();
+          render();
+        }
+        //function updateGeom(){
+        //  // TODO non funziona guardare esempio threejs
+        //  console.log("inside");
+        //  console.log(geomParameters["tubSegs"]);
+        //  console.log(geomParameters["radSegs"]);
+
+        //  mesh.geometry.parameters.tubularSegments = geomParameters["tubSegs"];
+        //  mesh.geometry.parameters.radialSegments  = geomParameters["radSegs"];
+
+        //  console.log(mesh.geometry.parameters.tubularSegments);
+        //  console.log(mesh.geometry.parameters.radialSegments  );
+
+        //  mesh.geometry.verticesNeedUpdate = true;
+        //  mesh.geometry.elementsNeedUpdate = true;
+        //  mesh.geometry.morphTargetsNeedUpdate = true;
+        //  mesh.geometry.uvsNeedUpdate = true;
+        //  mesh.geometry.normalsNeedUpdate = true;
+        //  mesh.geometry.colorsNeedUpdate = true;
+        //  mesh.geometry.tangentsNeedUpdate = true;
+        //  //mesh.geometry.dynamic = true;
+        //  render();
+        //  console.log("-------------------------------- rendered --------------------------------");
+        //}
+
+
+					//const data = {
+					//	radius: 10,
+					//	tube: 3,
+					//	tubularSegments: 64,
+					//	radialSegments: 8,
+					//	p: 2,
+					//	q: 3
+					//};
+					//function generateGeometry() {
+					//	updateGroupGeometry( mesh,
+					//		new TorusKnotBufferGeometry(
+					//			data.radius, data.tube, data.tubularSegments, data.radialSegments,
+					//			data.p, data.q
+					//		)
+					//	);
+					//}
+
+					function generateGeometry() {
+
+						updateGroupGeometry( mesh,
+							//new TorusKnotBufferGeometry(
+							//	data.radius, data.tube, data.tubularSegments, data.radialSegments,
+							//	data.p, data.q
+							//)
+              new THREE.TorusKnotBufferGeometry(
+                  2, 0.5, geomParameters["tubSegs"], geomParameters["radSegs"])
+
+						);
+					}
+
+        
+
+        function updateGroupGeometry( mesh, geometry ) {
+
+          if ( geometry.isGeometry ) {
+
+            geometry = new THREE.BufferGeometry().fromGeometry( geometry );
+
+            console.warn( 'THREE.GeometryBrowser: Converted Geometry to BufferGeometry.' );
+
+          }
+
+          //mesh.children[ 0 ].geometry.dispose();
+          //mesh.children[ 1 ].geometry.dispose();
+
+          //mesh.children[ 0 ].geometry = new THREE.WireframeGeometry( geometry );
+          //mesh.children[ 1 ].geometry = geometry;
+
+          //// these do not update nicely together if shared
+          mesh.geometry = geometry;
+
+        }
+
+			}
+
+			function updateUniforms() {
+
+					uniforms.cdiff.value = new THREE.Vector3(cdiff.red,cdiff.green,cdiff.blue);
+					uniforms.clight.value = new THREE.Vector3(
+							lightParameters.red * lightParameters.intensity,
+					    lightParameters.green * lightParameters.intensity,
+							lightParameters.blue * lightParameters.intensity);
+			}
+
+			init();
+			buildGui();
+			update();
+			render();
+
+		</script>
+	</body>
+</html>
