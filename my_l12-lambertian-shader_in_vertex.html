@@ -240,8 +240,8 @@
 				cdiffSettings.add(cdiff,'blue').min(0).max(1).onChange( function(newVal) { render() });
 
 				geomSettings = gui.addFolder('Geometry');
-				geomSettings.add(geomParameters,'tubSegs').min(1).max(200).onChange( function(newVal) { geomParameters["tubSegs"] = newVal; updateGeom() });
-				geomSettings.add(geomParameters,'radSegs').min(1).max(32).onChange( function(newVal)  { geomParameters["radSegs"] = newVal; updateGeom() });
+				geomSettings.add(geomParameters,'tubSegs').min(10).max(200).onChange( function(newVal) { geomParameters["tubSegs"] = newVal; updateGeom() });
+				geomSettings.add(geomParameters,'radSegs').min(10).max(32).onChange( function(newVal)  { geomParameters["radSegs"] = newVal; updateGeom() });
 
 				materialSettings = gui.addFolder('Material Shader');
 
@@ -273,60 +273,14 @@
           generateGeometry();
           render();
         }
-        //function updateGeom(){
-        //  // TODO non funziona guardare esempio threejs
-        //  console.log("inside");
-        //  console.log(geomParameters["tubSegs"]);
-        //  console.log(geomParameters["radSegs"]);
 
-        //  mesh.geometry.parameters.tubularSegments = geomParameters["tubSegs"];
-        //  mesh.geometry.parameters.radialSegments  = geomParameters["radSegs"];
-
-        //  console.log(mesh.geometry.parameters.tubularSegments);
-        //  console.log(mesh.geometry.parameters.radialSegments  );
-
-        //  mesh.geometry.verticesNeedUpdate = true;
-        //  mesh.geometry.elementsNeedUpdate = true;
-        //  mesh.geometry.morphTargetsNeedUpdate = true;
-        //  mesh.geometry.uvsNeedUpdate = true;
-        //  mesh.geometry.normalsNeedUpdate = true;
-        //  mesh.geometry.colorsNeedUpdate = true;
-        //  mesh.geometry.tangentsNeedUpdate = true;
-        //  //mesh.geometry.dynamic = true;
-        //  render();
-        //  console.log("-------------------------------- rendered --------------------------------");
-        //}
-
-
-					//const data = {
-					//	radius: 10,
-					//	tube: 3,
-					//	tubularSegments: 64,
-					//	radialSegments: 8,
-					//	p: 2,
-					//	q: 3
-					//};
-					//function generateGeometry() {
-					//	updateGroupGeometry( mesh,
-					//		new TorusKnotBufferGeometry(
-					//			data.radius, data.tube, data.tubularSegments, data.radialSegments,
-					//			data.p, data.q
-					//		)
-					//	);
-					//}
-
-					function generateGeometry() {
-
-						updateGroupGeometry( mesh,
-							//new TorusKnotBufferGeometry(
-							//	data.radius, data.tube, data.tubularSegments, data.radialSegments,
-							//	data.p, data.q
-							//)
-              new THREE.TorusKnotBufferGeometry(
-                  2, 0.5, geomParameters["tubSegs"], geomParameters["radSegs"])
-
-						);
-					}
+        function generateGeometry() {
+          updateGroupGeometry(
+            mesh,
+            new THREE.TorusKnotBufferGeometry(
+              2, 0.5, geomParameters["tubSegs"], geomParameters["radSegs"])
+            );
+        }
 
         
 
@@ -339,14 +293,6 @@
             console.warn( 'THREE.GeometryBrowser: Converted Geometry to BufferGeometry.' );
 
           }
-
-          //mesh.children[ 0 ].geometry.dispose();
-          //mesh.children[ 1 ].geometry.dispose();
-
-          //mesh.children[ 0 ].geometry = new THREE.WireframeGeometry( geometry );
-          //mesh.children[ 1 ].geometry = geometry;
-
-          //// these do not update nicely together if shared
           mesh.geometry = geometry;
 
         }
