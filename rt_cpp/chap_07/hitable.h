@@ -4,9 +4,9 @@
 #include "ray.h"
 
 struct hit_record {
-  float t;
-  vec3 p;
-  vec3 normal;
+  float t;     // time of the ray when hit
+  vec3 p;      // hit point
+  vec3 normal; // surface normal at p
 };
 
 class hitable {
